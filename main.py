@@ -29,16 +29,19 @@ def register_user(username, password):
 def db_connection(username, password):
     try:
         db_cursor = conn.cursor()
-        credentials = db_cursor.execute(
-            "SELECT * FROM user_info WHERE username =  ? and password = ?", (username, password)).fetchall()
-        if (credentials != None):
-            print(credentials[0])
+        query = db_cursor.execute(
+            "SELECT * FROM user_info WHERE username =  ? and password = ?", (username, password,))
+        user_credentials = query.fetchone()
+        #print("Total rows are:  ", len(user_credentials))
+        if (user_credentials != None):
+            print(user_credentials)
         else:
-            print('user not exists')
+            print(
+                'You are note register, you want to register with the information you input?')
     except Error as e:
         print(e)
         create_db()
-        #register_user(username, password)
+        register_user(username, password)
 
     finally:
         if conn:
@@ -49,10 +52,10 @@ def authenticate_user(username, password):
     encrypt_password = crypter.encrypt(password.encode())
     db_connection(username, encrypt_password)
 
-    print('MyPass=', password)
-    print('MyPass=', encrypt_password)
-    decrypt_password = crypter.decrypt(encrypt_password).decode()
-    print('MyPassAgain=', decrypt_password)
+    #print('MyPass=', password)
+    #print('MyPass=', encrypt_password)
+    #decrypt_password = crypter.decrypt(encrypt_password).decode()
+    #print('MyPassAgain=', decrypt_password)
 
 
 # get username and password
