@@ -16,14 +16,14 @@ def create_db():
     cursor.executescript(sql_as_string)
 
 
-def register_user(username, password):
+def register_user(username, password, email):
     print("register main user.")
     answer = input('You want to register (y/n) ?:')
 
     if (answer.lower == 'y'):
         db_cursor = conn.cursor()
         register = db_cursor.execute(
-            "INSERT INTO user_info VALUES as (?,?)", (username, password))
+            "INSERT INTO user_info VALUES as (?,?,?)", (username, password, email))
 
 
 def db_connection(username, password):
@@ -36,12 +36,15 @@ def db_connection(username, password):
         if (user_credentials != None):
             print(user_credentials)
         else:
-            print(
-                'You are note register, you want to register with the information you input?')
+            register = input(
+                'You are note register, you want to register with the information you input?(y/n)')
+            if (register == 'Y' or register == 'y'):
+                email = input('Inpute your email: ')
+                register_user(username, password, email)
+
     except Error as e:
         print(e)
         create_db()
-        register_user(username, password)
 
     finally:
         if conn:
