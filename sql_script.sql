@@ -4,12 +4,9 @@ CREATE TABLE IF NOT EXISTS user_info (
 	password blob NOT NULL,
 	email text NOT NULL
 );
-CREATE TABLE IF NOT EXISTS accounts (
-	id integer PRIMARY KEY,
-	account_name text NOT NULL
-);
-CREATE TABLE IF NOT EXISTS account_info (
+CREATE TABLE IF NOT EXISTS account (
 	account_id integer PRIMARY KEY,
+	account_name text NOT NULL,
 	account_username text NOT NULL,
 	account_password text NOT NULL,
 	created_at text NOT NULL,
