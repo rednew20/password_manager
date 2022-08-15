@@ -1,6 +1,8 @@
 import base64
-# import os
+from contextvars import copy_context
+import os
 import datetime
+from unittest import result
 
 from requests import Request, Session
 import sqlite3
@@ -9,8 +11,40 @@ import getpass
 from match import Match
 # from command import Command
 
+# Import smtplib for the actual sending function
+import smtplib
+# Import the email modules we'll need
+from email.message import EmailMessage
+import random
+import string
+
+
 userlogged = []
 conn = sqlite3.connect('mypassword.db')
+
+
+def email_sender(email, code):
+
+    msg = EmailMessage()
+    msg['Subject'] = f'Password Reset Code '
+    msg['From'] = 'info@wenderalvarado.com'
+    msg['To'] = email
+    msg.set_content(f' Your Code to change password is: {code} ')
+
+    # Send the message via our own SMTP server.
+    user = os.environ.get('EMAIL_ADDR')
+    password = os.environ.get('EMAIL_PASS')
+    url = os.environ.get('EMAIL_PASS')
+
+    smtpObj = smtplib.SMTP_SSL(url, 465)
+    smtpObj.login(user, password)
+    #smtpObj = smtplib.SMTP('localhost', 25)
+    #smtpObj.sendmail(user, email, msg)
+    smtpObj.send_message(msg)
+    print("Successfully sent email")
+
+    # except smtplib.SMTPException:
+    #    print("Error: unable to send email")
 
 
 def gen_key(password):
@@ -30,7 +64,7 @@ def create_db():
     finally:
         if conn:
             conn.close()
-            print('SQLite Connection closed')
+            #print('SQLite Connection closed')
 
 
 def register_user(username, password, email):
@@ -54,9 +88,9 @@ def execute_query(conn, query):
         return response
     except Error as e:
         print(e)
-    finally:
-        if conn:
-            conn.close()
+    # finally:
+    #     if conn:
+    #         conn.close()
 
 
 def validate_user(username, password):
@@ -87,68 +121,126 @@ def authenticate_user(username, password):
         userlogged.append([username, datetime.datetime.now()])
 
 
-def setacc():
-    # if (len(userlogged) > 0):
-    conn = sqlite3.connect('mypassword.db')
-    print("\n=== Setting new Account ===")
-    account = input('Input Account Name: ')
-    username = input('Input Account Username: ')
-    password = getpass.getpass(prompt='Input account Password: ')
-    try:
-        db_cursor = conn.cursor()
-        sql_str = f"""INSERT INTO account (account_name,account_username,account_password,created_at,updated_at) 
-                    VALUES ('{account}', '{username}', '{gen_key(password).decode('utf-8')}','{datetime.datetime.now()}','{datetime.datetime.now()}')"""
+def is_logged():
+    if (len(userlogged) > 0):
+        return True
 
-        print(sql_str)
-
-        db_cursor.execute(sql_str)
-        conn.commit()
-        print("Account saved successfully. \n")
-    except Error as e:
-        print(e)
-    return True
-    # else:
-    #     print("Please Login. \n")
-    #     return False
-
-
-def listacc():
-    # if (len(userlogged) > 0):
-    conn = sqlite3.connect('mypassword.db')
-
-    try:
-        db_cursor = conn.cursor()
-        sql_str = f"SELECT account_name FROM account"
-        result = db_cursor.execute(sql_str)
-        rows = result.fetchall()
-        for row in rows:
-            print("-", row[0])
-
-    except Error as e:
-        print(e)
-    return True
-    # else:
-    #     print("Please Login. \n")
-    #     return False
+    print("Please Login. \n")
+    return False
 
 
 def getacc():
-    # if (len(userlogged) > 0):
-    print("\n=== Get Account Password ===")
-    account = input('Input Account Name: ')
-    username = input('Confirm the Username: ')
-    user_info = execute_query(conn,
-                              f"SELECT account_password FROM account WHERE account_name = '{account}' and account_username = '{username}'")
-    if (user_info):
-        dbpass = base64.urlsafe_b64decode(user_info[0])
-        print("______________________\n")
-        print("Password is :", dbpass.decode('utf-8'), " \n")
-    else:
-        print('Password not stored. \n')
-    return True
-    # else:
-    #     print("Please Login. \n")
-    #     return False
+    if (is_logged()):
+        print("\n=== Get Account Password ===")
+        account = input('Input Account Name: ')
+        username = input('Confirm the Username: ')
+        user_info = execute_query(conn,
+                                  f"SELECT account_password FROM account WHERE account_name = '{account}' and account_username = '{username}'")
+        if (user_info):
+            dbpass = base64.urlsafe_b64decode(user_info[0])
+            print("______________________\n")
+            print(f"Account:{account}, Username: {username} \n")
+            print("Password is :", dbpass.decode('utf-8'), " \n")
+        else:
+            print('Password not stored. \n')
+        # return True
+
+
+def addacc():
+    if (is_logged()):
+        conn = sqlite3.connect('mypassword.db')
+        print("\n=== Setting new Account ===")
+        account = input('Input Account Name: ')
+        username = input('Input Account Username: ')
+        password = getpass.getpass(prompt='Input account Password: ')
+        try:
+            db_cursor = conn.cursor()
+            sql_str = f"""INSERT INTO account (account_name,account_username,account_password,created_at,updated_at) 
+                        VALUES ('{account}', '{username}', '{gen_key(password).decode('utf-8')}','{datetime.datetime.now()}','{datetime.datetime.now()}')"""
+
+            # print(sql_str)
+            db_cursor.execute(sql_str)
+            conn.commit()
+            print("Account saved successfully. \n")
+        except Error as e:
+            print(e)
+        return True
+
+
+def updacc():
+    if (is_logged()):
+        conn = sqlite3.connect('mypassword.db')
+        print("\n=== Update Account ===")
+        account = input('Input Account Name: ')
+        username = input('Input Account Username: ')
+        password = getpass.getpass(prompt='Input Account new Password: ')
+        try:
+            db_cursor = conn.cursor()
+            sql_str = f"""UPDATE account SET account_password = '{gen_key(password).decode('utf-8')}', updated_at='{datetime.datetime.now()}' 
+            WHERE account_name = '{account}' and account_username = '{username}'"""
+
+            db_cursor.execute(sql_str)
+            conn.commit()
+            print("Account updated successfully. \n")
+        except Error as e:
+            print(e)
+        return True
+
+
+def delacc():
+    if (is_logged()):
+        conn = sqlite3.connect('mypassword.db')
+        print("\n=== Update Account ===")
+        account = input('Input Account Name: ')
+        username = input('Input Account Username: ')
+        confirm = input('Confirm to Delete (y/n): ')
+
+        if (confirm.lower() == 'y'):
+            try:
+                db_cursor = conn.cursor()
+                sql_str = f"""DELETE FROM account WHERE account_name = '{account}' and account_username = '{username}'"""
+
+                print(sql_str)
+                db_cursor.execute(sql_str)
+                conn.commit()
+                print("Account Deleted successfully. \n")
+            except Error as e:
+                print(e)
+            return True
+
+
+def listacc():
+    if ((is_logged())):
+        conn = sqlite3.connect('mypassword.db')
+
+        try:
+            db_cursor = conn.cursor()
+            sql_str = f"SELECT account_name FROM account"
+            result = db_cursor.execute(sql_str)
+            rows = result.fetchall()
+            for row in rows:
+                print("-", row[0])
+
+        except Error as e:
+            print(e)
+        return True
+
+
+def recover():
+    conn = sqlite3.connect('mypassword.db')
+    print('=========Password Recovery========= \n')
+    username = input('Input the Main username: ')
+    email = input('Confirm Main User Email: ')
+
+    data = execute_query(conn,
+                         f"SELECT username,email FROM user_info WHERE username = '{username}'")
+
+    if (data[1] == email):
+        # email match
+        letters = string.ascii_lowercase
+        result_str = ''.join(random.choice(letters) for i in range(8))
+        print(result_str)
+        email_sender(email, result_str)
 
 
 def login():
@@ -162,12 +254,12 @@ def print_help():
     print("---------------------------------------------------------")
     print("> help - Command to get the list of command inputs. ")
     print("> login - Command to authenticate. ")
-    print("> getacc - Command to get stored password. ")
+    print("> addacc - Command to get stored password. ")
     print("> setacc - Command to add new password info to the vault.")
-    print("> updpass - Command to update stored password. ")
-    print("> delpass - Command to delete stored password. ")
+    print("> updacc - Command to update stored password. ")
+    print("> delacc - Command to delete stored password. ")
     print("> listacc - Command to list the account stored. ")
-    print("> recover - Recover admin user password. ")
+    print("> recover - Recover admin user password via Email ")
     print("> quit - Exit application. ")
     print("---------------------------------------------------------")
 

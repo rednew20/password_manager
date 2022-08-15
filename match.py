@@ -10,14 +10,23 @@ class Match:
     def case_login(self):
         return "login()"
 
+    def case_recover(self):
+        return "recover()"
+
     def case_getacc(self):
         return "getacc()"
 
-    def case_setacc(self):
-        return "setacc()"
+    def case_addacc(self):
+        return "addacc()"
+
+    def case_updacc(self):
+        return "updacc()"
 
     def case_listacc(self):
         return "listacc()"
+
+    def case_delacc(self):
+        return "delacc()"
 
     def case_quit(self):
         return "quit()"

@@ -10,6 +10,6 @@ CREATE TABLE IF NOT EXISTS account (
 	account_username text NOT NULL,
 	account_password text NOT NULL,
 	created_at text NOT NULL,
-	updated_At text NOT NULL,
+	updated_at text NOT NULL,
 	FOREIGN KEY (account_id) REFERENCES accounts (id)
 );
