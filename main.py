@@ -38,10 +38,8 @@ def email_sender(email, code):
 
     smtpObj = smtplib.SMTP_SSL(url, 465)
     smtpObj.login(user, password)
-    #smtpObj = smtplib.SMTP('localhost', 25)
-    #smtpObj.sendmail(user, email, msg)
     smtpObj.send_message(msg)
-    print("Successfully sent email")
+    print("Email sent. \n")
 
     # except smtplib.SMTPException:
     #    print("Error: unable to send email")
@@ -64,7 +62,6 @@ def create_db():
     finally:
         if conn:
             conn.close()
-            #print('SQLite Connection closed')
 
 
 def register_user(username, password, email):
@@ -143,7 +140,6 @@ def getacc():
             print("Password is :", dbpass.decode('utf-8'), " \n")
         else:
             print('Password not stored. \n')
-        # return True
 
 
 def addacc():
@@ -155,7 +151,7 @@ def addacc():
         password = getpass.getpass(prompt='Input account Password: ')
         try:
             db_cursor = conn.cursor()
-            sql_str = f"""INSERT INTO account (account_name,account_username,account_password,created_at,updated_at) 
+            sql_str = f"""INSERT INTO account (account_name,account_username,account_password,created_at,updated_at)
                         VALUES ('{account}', '{username}', '{gen_key(password).decode('utf-8')}','{datetime.datetime.now()}','{datetime.datetime.now()}')"""
 
             # print(sql_str)
@@ -164,7 +160,6 @@ def addacc():
             print("Account saved successfully. \n")
         except Error as e:
             print(e)
-        return True
 
 
 def updacc():
@@ -176,7 +171,7 @@ def updacc():
         password = getpass.getpass(prompt='Input Account new Password: ')
         try:
             db_cursor = conn.cursor()
-            sql_str = f"""UPDATE account SET account_password = '{gen_key(password).decode('utf-8')}', updated_at='{datetime.datetime.now()}' 
+            sql_str = f"""UPDATE account SET account_password = '{gen_key(password).decode('utf-8')}', updated_at='{datetime.datetime.now()}'
             WHERE account_name = '{account}' and account_username = '{username}'"""
 
             db_cursor.execute(sql_str)
@@ -184,7 +179,6 @@ def updacc():
             print("Account updated successfully. \n")
         except Error as e:
             print(e)
-        return True
 
 
 def delacc():
@@ -206,13 +200,11 @@ def delacc():
                 print("Account Deleted successfully. \n")
             except Error as e:
                 print(e)
-            return True
 
 
 def listacc():
     if ((is_logged())):
         conn = sqlite3.connect('mypassword.db')
-
         try:
             db_cursor = conn.cursor()
             sql_str = f"SELECT account_name FROM account"
@@ -220,10 +212,9 @@ def listacc():
             rows = result.fetchall()
             for row in rows:
                 print("-", row[0])
-
+            print("-------------- \n")
         except Error as e:
             print(e)
-        return True
 
 
 def recover():
@@ -239,8 +230,21 @@ def recover():
         # email match
         letters = string.ascii_lowercase
         result_str = ''.join(random.choice(letters) for i in range(8))
-        print(result_str)
+        userlogged.append(result_str)
         email_sender(email, result_str)
+        recovercode = input('Please input the Recover Code: ')
+        if (recovercode == userlogged[2]):
+            input('Please input the new Admin password: ')
+            newpassword = getpass.getpass(
+                prompt='Please input the new admin password. ')
+            confirm = getpass.getpass(
+                prompt='Confirm the new admin password. ')
+            if (newpassword == confirm):
+                db_cursor = conn.cursor()
+                sql_str = f"""UPDATE user_info SET password = '{gen_key(newpassword).decode('utf-8')}'"""
+                db_cursor.execute(sql_str)
+                conn.commit()
+                print("Admin password updated. \n")
 
 
 def login():
@@ -261,11 +265,11 @@ def print_help():
     print("> listacc - Command to list the account stored. ")
     print("> recover - Recover admin user password via Email ")
     print("> quit - Exit application. ")
-    print("---------------------------------------------------------")
+    print("--------------------------------------------------------- \n")
 
 
 def default():
-    print('Put a valid option. ')
+    print('Put a valid option. \n')
     return 0
 
 
