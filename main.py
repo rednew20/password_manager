@@ -1,33 +1,32 @@
 import base64
-from contextvars import copy_context
 import os
 import datetime
-from unittest import result
+import random
+import string
 
+from unittest import result
 from requests import Request, Session
+
 import sqlite3
 from sqlite3 import Error
 import getpass
 from match import Match
-# from command import Command
-
 # Import smtplib for the actual sending function
 import smtplib
 # Import the email modules we'll need
 from email.message import EmailMessage
-import random
-import string
 
 
 userlogged = []
 conn = sqlite3.connect('mypassword.db')
+~~
 
 
 def email_sender(email, code):
 
     msg = EmailMessage()
     msg['Subject'] = f'Password Reset Code '
-    msg['From'] = 'info@wenderalvarado.com'
+    msg['From'] = os.environ.get('EMAIL_ADDR')
     msg['To'] = email
     msg.set_content(f' Your Code to change password is: {code} ')
 
@@ -41,11 +40,8 @@ def email_sender(email, code):
     smtpObj.send_message(msg)
     print("Email sent. \n")
 
-    # except smtplib.SMTPException:
-    #    print("Error: unable to send email")
 
-
-def gen_key(password):
+def encrypt_password(password):
     key = base64.urlsafe_b64encode(password.encode("utf-8"))
     return key
 
@@ -111,7 +107,7 @@ def validate_user(username, password):
 
 
 def authenticate_user(username, password):
-    encrypted_password = gen_key(password)
+    encrypted_password = encrypt_password(password)
     authenticated = validate_user(username, encrypted_password)
     if authenticated:
         print(f'Login Success. Welcome {username}, \n')
@@ -152,7 +148,7 @@ def addacc():
         try:
             db_cursor = conn.cursor()
             sql_str = f"""INSERT INTO account (account_name,account_username,account_password,created_at,updated_at)
-                        VALUES ('{account}', '{username}', '{gen_key(password).decode('utf-8')}','{datetime.datetime.now()}','{datetime.datetime.now()}')"""
+                        VALUES ('{account}', '{username}', '{encrypt_password(password).decode('utf-8')}','{datetime.datetime.now()}','{datetime.datetime.now()}')"""
 
             # print(sql_str)
             db_cursor.execute(sql_str)
@@ -171,7 +167,7 @@ def updacc():
         password = getpass.getpass(prompt='Input Account new Password: ')
         try:
             db_cursor = conn.cursor()
-            sql_str = f"""UPDATE account SET account_password = '{gen_key(password).decode('utf-8')}', updated_at='{datetime.datetime.now()}'
+            sql_str = f"""UPDATE account SET account_password = '{encrypt_password(password).decode('utf-8')}', updated_at='{datetime.datetime.now()}'
             WHERE account_name = '{account}' and account_username = '{username}'"""
 
             db_cursor.execute(sql_str)
@@ -241,7 +237,7 @@ def recover():
                 prompt='Confirm the new admin password. ')
             if (newpassword == confirm):
                 db_cursor = conn.cursor()
-                sql_str = f"""UPDATE user_info SET password = '{gen_key(newpassword).decode('utf-8')}'"""
+                sql_str = f"""UPDATE user_info SET password = '{encrypt_password(newpassword).decode('utf-8')}'"""
                 db_cursor.execute(sql_str)
                 conn.commit()
                 print("Admin password updated. \n")
